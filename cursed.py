@@ -1,0 +1,1 @@
+print ("rust and bob3 = love")

@@ -1,43 +1,82 @@
-class CourierDelivery:
-    def calculate_cost(self, weight):
-        # Courier: base price 100 UAH + 20 UAH per kilogram
-        return 100 + (weight * 20)
+from functools import wraps
 
+class User:
+    def __init__(self, name, role):
+        self.name = name
+        self.role = role
 
-class PostDelivery:
-    def calculate_cost(self, weight):
-        # Post: base price 50 UAH + 10 UAH per kilogram
-        return 50 + (weight * 10)
+# Logging decorator
+def log_action(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print(f"-- Log: Executing method '{func.__name__}' --")
+        return func(*args, **kwargs)
+    return wrapper
 
+# Role checking decorator
+def require_role(role):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # Check access using the private method
+            if self._check_access(role):
+                return func(self, *args, **kwargs)
+            else:
+                print(f"Access Denied: User '{self.user.name}' does not have the '{role}' role!")
+        return wrapper
+    return decorator
 
-class PickupDelivery:
-    def calculate_cost(self, weight):
-        # Pickup: always free, regardless of weight
-        return 0
+class AdminPanel:
+    def __init__(self, user):
+        self.user = user
+        # Mock database of users
+        self.users_db = ["Ivan", "Maria", "Peter"]
 
+    # Private method (starts with an underscore)
+    def _check_access(self, role):
+        return self.user.role == role
 
-def show_delivery_costs(delivery_methods, weight):
-    print(f"--- Вартість доставки для замовлення вагою {weight} кг ---")
+    @log_action
+    def view_users(self):
+        print(f"User list: {self.users_db}")
 
-    for delivery in delivery_methods:
-        # Get the class name (e.g., "PostDelivery") for output formatting
-        method_name = delivery.__class__.__name__
-
-        # Polymorphism in action:
-        # The loop doesn't know the exact class, it just calls the calculate_cost method
-        cost = delivery.calculate_cost(weight)
-
-        if cost == 0:
-            print(f"{method_name}: Безкоштовно")
+    # Demo 1: First log the action, then check permissions
+    @log_action
+    @require_role("admin")
+    def delete_user(self, username):
+        if username in self.users_db:
+            self.users_db.remove(username)
+            print(f"User '{username}' has been successfully deleted.")
         else:
-            print(f"{method_name}: {cost} грн")
+            print("User not found.")
 
+    # Demo 2: First check permissions, then log the action if successful
+    @require_role("admin")
+    @log_action
+    def change_settings(self, setting, value):
+        print(f"Setting '{setting}' has been changed to '{value}'.")
 
-# Create a list of objects (instances) of different delivery classes
-available_deliveries = [CourierDelivery(), PostDelivery(), PickupDelivery()]
+# ==========================================
+# Testing the System
+# ==========================================
 
-# Test for a weight of 2 kg
-show_delivery_costs(available_deliveries, 2)
+print("=== Tests for Admin ===")
+admin = User("Max", "admin")
+panel = AdminPanel(admin)
 
-# Test for a weight of 10 kg
-show_delivery_costs(available_deliveries, 10)
+panel.view_users()
+panel.delete_user("Ivan")
+panel.change_settings("Theme", "Dark")
+
+print("\n=== Tests for Regular User ===")
+guest = User("Oleh", "guest")
+panel2 = AdminPanel(guest)
+
+# Works fine, no role required
+panel2.view_users()
+
+# Fails (not an admin), but logs the attempt because @log_action is on top
+panel2.delete_user("Maria")
+
+# Fails and does NOT log because @require_role blocks it before @log_action
+panel2.change_settings("Theme", "Light")

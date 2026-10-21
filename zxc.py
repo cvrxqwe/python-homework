@@ -56,9 +56,8 @@ class AdminPanel:
     def change_settings(self, setting, value):
         print(f"Setting '{setting}' has been changed to '{value}'.")
 
-# ==========================================
+
 # Testing the System
-# ==========================================
 
 print("=== Tests for Admin ===")
 admin = User("Max", "admin")

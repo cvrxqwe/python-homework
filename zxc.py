@@ -1,81 +1,84 @@
-from functools import wraps
+#Task 5
 
-class User:
-    def __init__(self, name, role):
-        self.name = name
-        self.role = role
+# 1. Node Class (Tab)
+class Tab:
+    def __init__(self, title, url):
+        self.title, self.url = title, url
+        self.prev = self.next = None  # Multiple assignment on one line
 
-# Logging decorator
-def log_action(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        print(f"-- Log: Executing method '{func.__name__}' --")
-        return func(*args, **kwargs)
-    return wrapper
 
-# Role checking decorator
-def require_role(role):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            # Check access using the private method
-            if self._check_access(role):
-                return func(self, *args, **kwargs)
-            else:
-                print(f"Access Denied: User '{self.user.name}' does not have the '{role}' role!")
-        return wrapper
-    return decorator
+# 2. TabManager Class
+class TabManager:
+    def __init__(self):
+        self.head = self.tail = self.active = None
 
-class AdminPanel:
-    def __init__(self, user):
-        self.user = user
-        # Mock database of users
-        self.users_db = ["Ivan", "Maria", "Peter"]
-
-    # Private method (starts with an underscore)
-    def _check_access(self, role):
-        return self.user.role == role
-
-    @log_action
-    def view_users(self):
-        print(f"User list: {self.users_db}")
-
-    # Demo 1: First log the action, then check permissions
-    @log_action
-    @require_role("admin")
-    def delete_user(self, username):
-        if username in self.users_db:
-            self.users_db.remove(username)
-            print(f"User '{username}' has been successfully deleted.")
+    def open_tab(self, title, url):
+        new_tab = Tab(title, url)
+        if not self.head:
+            self.head = self.tail = self.active = new_tab
         else:
-            print("User not found.")
+            # Re-link pointers compactly
+            self.tail.next, new_tab.prev = new_tab, self.tail
+            self.tail = new_tab
+        print(f"Opened: '{title}'")
 
-    # Demo 2: First check permissions, then log the action if successful
-    @require_role("admin")
-    @log_action
-    def change_settings(self, setting, value):
-        print(f"Setting '{setting}' has been changed to '{value}'.")
+    # Combined next/prev tab into one method
+    def switch(self, forward=True):
+        target = self.active.next if forward else self.active.prev
+        if target:
+            self.active = target
+            print(f"Switched to: '{self.active.title}'")
+        else:
+            print("Cannot move further.")
+
+    def close_tab(self, title):
+        curr = self.head
+        # Quick search
+        while curr and curr.title != title:
+            curr = curr.next
+
+        if not curr:
+            return print(f"Tab '{title}' not found.")
+
+        # Fallback for active tab (if prev is None, it takes next)
+        if curr == self.active:
+            self.active = curr.prev or curr.next
+
+        # Re-link pointers (bypass the closed tab)
+        if curr.prev:
+            curr.prev.next = curr.next
+        else:
+            self.head = curr.next
+
+        if curr.next:
+            curr.next.prev = curr.prev
+        else:
+            self.tail = curr.prev
+
+        print(f"Closed: '{title}'")
+
+    # Combined forward/backward display into one method
+    def show(self, reverse=False):
+        print(f"\n--- Tabs ({'Right to Left' if reverse else 'Left to Right'}) ---")
+        curr = self.tail if reverse else self.head
+
+        while curr:
+            mark = "[*]" if curr == self.active else "[ ]"
+            print(f"  {mark} {curr.title}")
+            # Move to the next or previous depending on the mode
+            curr = curr.prev if reverse else curr.next
 
 
 # Testing the System
+browser = TabManager()
 
-print("=== Tests for Admin ===")
-admin = User("Max", "admin")
-panel = AdminPanel(admin)
+browser.open_tab("Google", "google.com")
+browser.open_tab("YouTube", "youtube.com")
+browser.open_tab("GitHub", "github.com")
 
-panel.view_users()
-panel.delete_user("Ivan")
-panel.change_settings("Theme", "Dark")
+browser.switch(forward=True)  # Go to YouTube
+browser.switch(forward=False)  # Go back to Google
 
-print("\n=== Tests for Regular User ===")
-guest = User("Oleh", "guest")
-panel2 = AdminPanel(guest)
-
-# Works fine, no role required
-panel2.view_users()
-
-# Fails (not an admin), but logs the attempt because @log_action is on top
-panel2.delete_user("Maria")
-
-# Fails and does NOT log because @require_role blocks it before @log_action
-panel2.change_settings("Theme", "Light")
+browser.close_tab("Google")  # Close active tab
+browser.show()  # Default: forward
+browser.show(reverse=True)  # Backward

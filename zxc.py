@@ -1,84 +1,65 @@
-#Task 5
+#Task 3
 
-# 1. Node Class (Tab)
-class Tab:
-    def __init__(self, title, url):
-        self.title, self.url = title, url
-        self.prev = self.next = None  # Multiple assignment on one line
-
-
-# 2. TabManager Class
-class TabManager:
+# Settings History Stack Class
+class SettingsHistory:
     def __init__(self):
-        self.head = self.tail = self.active = None
+        # A simple Python list acts as our stack
+        self.stack = []
 
-    def open_tab(self, title, url):
-        new_tab = Tab(title, url)
-        if not self.head:
-            self.head = self.tail = self.active = new_tab
+    # 1. Save a description of each change (Push operation)
+    def save_change(self, change_description):
+        # .append() adds an item to the top of the stack (end of the list)
+        self.stack.append(change_description)
+        print(f"Saved: '{change_description}'")
+
+    # 2. Output the latest change without removing it (Peek operation)
+    def show_latest(self):
+        if not self.stack:
+            print("History is empty. No recent changes.")
         else:
-            # Re-link pointers compactly
-            self.tail.next, new_tab.prev = new_tab, self.tail
-            self.tail = new_tab
-        print(f"Opened: '{title}'")
+            # [-1] gets the last element of the list
+            print(f"Latest change: '{self.stack[-1]}'")
 
-    # Combined next/prev tab into one method
-    def switch(self, forward=True):
-        target = self.active.next if forward else self.active.prev
-        if target:
-            self.active = target
-            print(f"Switched to: '{self.active.title}'")
+    # 3. Remove the latest change from the stack (Pop / Undo operation)
+    def undo_last_change(self):
+        if not self.stack:
+            print("Nothing to undo. History is empty.")
         else:
-            print("Cannot move further.")
+            # .pop() removes and returns the last element from the list
+            removed_change = self.stack.pop()
+            print(f"Undo action: Removed '{removed_change}'")
 
-    def close_tab(self, title):
-        curr = self.head
-        # Quick search
-        while curr and curr.title != title:
-            curr = curr.next
-
-        if not curr:
-            return print(f"Tab '{title}' not found.")
-
-        # Fallback for active tab (if prev is None, it takes next)
-        if curr == self.active:
-            self.active = curr.prev or curr.next
-
-        # Re-link pointers (bypass the closed tab)
-        if curr.prev:
-            curr.prev.next = curr.next
+    # 4. Show the history (from newest to oldest)
+    def show_history(self):
+        print("\n--- Settings History (Newest to Oldest) ---")
+        if not self.stack:
+            print("  [Empty]")
         else:
-            self.head = curr.next
-
-        if curr.next:
-            curr.next.prev = curr.prev
-        else:
-            self.tail = curr.prev
-
-        print(f"Closed: '{title}'")
-
-    # Combined forward/backward display into one method
-    def show(self, reverse=False):
-        print(f"\n--- Tabs ({'Right to Left' if reverse else 'Left to Right'}) ---")
-        curr = self.tail if reverse else self.head
-
-        while curr:
-            mark = "[*]" if curr == self.active else "[ ]"
-            print(f"  {mark} {curr.title}")
-            # Move to the next or previous depending on the mode
-            curr = curr.prev if reverse else curr.next
+            # reversed() allows us to read the stack from top to bottom
+            for index, change in enumerate(reversed(self.stack), start=1):
+                print(f"  {index}. {change}")
+        print("-------------------------------------------\n")
 
 
 # Testing the System
-browser = TabManager()
 
-browser.open_tab("Google", "google.com")
-browser.open_tab("YouTube", "youtube.com")
-browser.open_tab("GitHub", "github.com")
+settings = SettingsHistory()
 
-browser.switch(forward=True)  # Go to YouTube
-browser.switch(forward=False)  # Go back to Google
+# 1. User changes settings (Pushing to stack)
+print("=== Adding Changes ===")
+settings.save_change("Language changed to Ukrainian")
+settings.save_change("Theme changed to Dark Mode")
+settings.save_change("Font size increased to 16px")
+settings.save_change("Volume set to 80%")
 
-browser.close_tab("Google")  # Close active tab
-browser.show()  # Default: forward
-browser.show(reverse=True)  # Backward
+# 2. Show the latest change
+print("\n=== Checking Latest Change ===")
+settings.show_latest()
+
+# 3. Undo the latest change (User decided they want the old volume back)
+print("\n=== Undoing Last Action ===")
+settings.undo_last_change()
+
+# 4. Show history after undo
+print("\n=== History After Undo ===")
+settings.show_history()

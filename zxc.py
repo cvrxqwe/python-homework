@@ -1,65 +1,53 @@
-#Task 3
+from collections import deque
+import time
 
-# Settings History Stack Class
-class SettingsHistory:
+
+# File Download Queue Class
+class DownloadQueue:
     def __init__(self):
-        # A simple Python list acts as our stack
-        self.stack = []
+        # We use 'deque' (Double-Ended Queue) because it is much faster 
+        # for removing elements from the beginning than a standard list.
+        self.queue = deque()
 
-    # 1. Save a description of each change (Push operation)
-    def save_change(self, change_description):
-        # .append() adds an item to the top of the stack (end of the list)
-        self.stack.append(change_description)
-        print(f"Saved: '{change_description}'")
+    # 1. Accept file names and add them to the queue
+    def add_file(self, filename):
+        self.queue.append(filename)
+        print(f"Added to queue: '{filename}'")
 
-    # 2. Output the latest change without removing it (Peek operation)
-    def show_latest(self):
-        if not self.stack:
-            print("History is empty. No recent changes.")
-        else:
-            # [-1] gets the last element of the list
-            print(f"Latest change: '{self.stack[-1]}'")
+    # 2. Simulate downloading the next file and show remaining files
+    def process_downloads(self):
+        print("\n--- Starting Downloads ---")
 
-    # 3. Remove the latest change from the stack (Pop / Undo operation)
-    def undo_last_change(self):
-        if not self.stack:
-            print("Nothing to undo. History is empty.")
-        else:
-            # .pop() removes and returns the last element from the list
-            removed_change = self.stack.pop()
-            print(f"Undo action: Removed '{removed_change}'")
+        # The loop runs as long as the queue is not empty
+        while self.queue:
+            # .popleft() takes the FIRST element from the left side of the queue
+            current_file = self.queue.popleft()
 
-    # 4. Show the history (from newest to oldest)
-    def show_history(self):
-        print("\n--- Settings History (Newest to Oldest) ---")
-        if not self.stack:
-            print("  [Empty]")
-        else:
-            # reversed() allows us to read the stack from top to bottom
-            for index, change in enumerate(reversed(self.stack), start=1):
-                print(f"  {index}. {change}")
-        print("-------------------------------------------\n")
+            print(f"Downloading: '{current_file}'...")
+
+            # Simulate a small delay for realism (1 second)
+            time.sleep(1)
+
+            # The required output format
+            print(f"Downloaded: '{current_file}'")
+
+            # Show how many files are left
+            remaining = len(self.queue)
+            print(f"Files left in queue: {remaining}\n")
+
+        # 3. Finish work when the queue is empty
+        print("--- Queue is empty. All downloads finished. ---")
 
 
 # Testing the System
 
-settings = SettingsHistory()
+downloader = DownloadQueue()
 
-# 1. User changes settings (Pushing to stack)
-print("=== Adding Changes ===")
-settings.save_change("Language changed to Ukrainian")
-settings.save_change("Theme changed to Dark Mode")
-settings.save_change("Font size increased to 16px")
-settings.save_change("Volume set to 80%")
+print("=== Adding Files ===")
+downloader.add_file("report.pdf")
+downloader.add_file("holiday_photos.zip")
+downloader.add_file("setup.exe")
+downloader.add_file("presentation.pptx")
 
-# 2. Show the latest change
-print("\n=== Checking Latest Change ===")
-settings.show_latest()
-
-# 3. Undo the latest change (User decided they want the old volume back)
-print("\n=== Undoing Last Action ===")
-settings.undo_last_change()
-
-# 4. Show history after undo
-print("\n=== History After Undo ===")
-settings.show_history()
+# Start the automated downloading process
+downloader.process_downloads()

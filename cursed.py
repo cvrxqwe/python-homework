@@ -1,45 +1,68 @@
-#Task 3
-
-class Node:
-    def __init__(self, grade):
-        self.grade = grade
-        self.left = None
-        self.right = None
-
-def count_leaves(node):
-    if not node:
-        return 0
-    # A leaf has no children
-    if not node.left and not node.right:
-        return 1
-    return count_leaves(node.left) + count_leaves(node.right)
-
-def get_height(node):
-    if not node:
-        return 0
-    # 1 for current level + max depth of subtrees
-    return 1 + max(get_height(node.left), get_height(node.right))
-
-def count_nodes(node):
-    if not node:
-        return 0
-    # 1 (current) + left nodes + right nodes
-    return 1 + count_nodes(node.left) + count_nodes(node.right)
+import json
 
 
-# Build tree manually
-root = Node(85)
-root.left = Node(75)
-root.right = Node(92)
+class OrderSystem:
+    def __init__(self):
+        self.filename = "orders.json"
+        self.orders = self.load_orders()
 
-root.left.left = Node(70)
-root.left.right = Node(80)
+    # Read file on startup
+    def load_orders(self):
+        try:
+            with open(self.filename, "r") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            # If the program is running for the first time and there is no file yet
+            return []
 
-root.right.left = Node(90)
-root.right.right = Node(99)
+    # Save list to file
+    def save_orders(self):
+        with open(self.filename, "w") as file:
+            json.dump(self.orders, file, indent=4)
 
-# Print results
-print("Root grade:", root.grade)
-print("Leaves count:", count_leaves(root))
-print("Tree height:", get_height(root))
-print("Total nodes:", count_nodes(root))
+    # Add a new order
+    def add_order(self, order_id, client, items, total):
+        new_order = {
+            "order_id": order_id,
+            "client": client,
+            "items": items,
+            "total": total,
+            "status": "new"  # Default status for all new orders
+        }
+        self.orders.append(new_order)
+        self.save_orders()
+        print(f"Added order #{order_id} for {client}.")
+
+    # Find an order by ID
+    def find_order(self, order_id):
+        for order in self.orders:
+            if order["order_id"] == order_id:
+                print(f"Found: Order #{order_id} | Client: {order['client']} | Status: {order['status']}")
+                return order
+
+        print(f"Order #{order_id} not found.")
+        return None
+
+    # Change order status
+    def change_status(self, order_id, new_status):
+        order = self.find_order(order_id)  # Reusing the find_order method
+        if order:
+            order["status"] = new_status
+            self.save_orders()
+            print(f"Order #{order_id} status updated to '{new_status}'.")
+
+
+# --- Testing ---
+shop = OrderSystem()
+
+print("=== Adding Orders ===")
+shop.add_order(101, "Ivan", ["Laptop", "Mouse"], 1200)
+shop.add_order(102, "Maria", ["Keyboard"], 50)
+
+print("\n=== Searching ===")
+shop.find_order(101)
+shop.find_order(999)  # Testing a non-existent order
+
+print("\n=== Updating Status ===")
+shop.change_status(101, "processing")
+shop.change_status(102, "completed")

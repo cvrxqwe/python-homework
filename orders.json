@@ -1,0 +1,21 @@
+[
+    {
+        "order_id": 101,
+        "client": "Ivan",
+        "items": [
+            "Laptop",
+            "Mouse"
+        ],
+        "total": 1200,
+        "status": "processing"
+    },
+    {
+        "order_id": 102,
+        "client": "Maria",
+        "items": [
+            "Keyboard"
+        ],
+        "total": 50,
+        "status": "completed"
+    }
+]
